@@ -1,10 +1,10 @@
 // Arquivo de definição de tipos
 // Extensão d.ts porque dentro desse arquivo só vai ter código de definição de tipos do TS
 
-import 'styled-components';
-import { defaultTheme } from '../styles/themes/default';
+import 'styled-components'
+import { defaultTheme } from '../styles/themes/default'
 
-type ThemeType = typeof defaultTheme;
+type ThemeType = typeof defaultTheme
 
 // Criando uma tipagem para o módulo styled components do npm
 // Ao importar o styled components em algum arquivo, a definição de tipos do TS será a definida aqui
