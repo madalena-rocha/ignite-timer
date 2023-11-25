@@ -1,6 +1,8 @@
 import { Play } from 'phosphor-react'
 import { useForm } from 'react-hook-form'
 // Os hooks são funções que acoplam uma funcionalidade em um componente existente
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as zod from 'zod' // o zod não tem um export default, por isso importa tudo como zod
 
 import {
   CountdownContainer,
@@ -20,8 +22,20 @@ import {
 // Como não tem acesso ao valor digitado letra a letra, perde a fluidez de habilitar ou desabilitar coisas, mas ganha em performance
 // Formulários simples com poucos campos geralmente usam controlled, já dashboards com grande quantidade de inputs precisam usar o modelo de uncontrolled
 
+const newCycleFormValidationSchema = zod.object({
+  task: zod.string().min(1, 'Informe a tarefa.'), // string de no mínimo 1 caractere, que caso não seja informado, retornar a mensagem de validação
+  minutesAmount: zod
+    .number()
+    .min(5, 'O ciclo precisa ser de no mínimo 5 minutos.')
+    .max(60, 'O ciclo precisa ser de no máximo 60 minutos.'),
+})
+// Schema nada mais é do que definir um formato e validar os dados do formulário com base nesse formato
+
 export function Home() {
-  const { register, handleSubmit, watch } = useForm()
+  const { register, handleSubmit, watch, formState } = useForm({
+    resolver: zodResolver(newCycleFormValidationSchema),
+    // Dentro do zodResolver, é necessário passar o schema de validação, ou seja, de que forma os dados dos inputs deverão ser validados
+  })
   // O useForm() é como se tivesse criando um novo formulário
   // A função register é o método que vai adicionar os campos de input ao formulário
   // Ela recebe o nome do input e retorna os métodos utilizados para trabalhar com inputs no JS, que a biblioteca react-hook-form utiliza para conseguir monitorar os valores dos inputs
@@ -36,6 +50,8 @@ export function Home() {
   function handleCreateNewCycle(data: any) {
     console.log(data)
   }
+
+  console.log(formState.errors)
 
   const task = watch('task') // saber o valor do campo de task em tempo real
   const isSubmitDisabled = !task
