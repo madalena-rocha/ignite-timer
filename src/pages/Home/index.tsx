@@ -1,6 +1,6 @@
-// import { useState } from 'react'
-
 import { Play } from 'phosphor-react'
+import { useForm } from 'react-hook-form'
+// Os hooks são funções que acoplam uma funcionalidade em um componente existente
 
 import {
   CountdownContainer,
@@ -21,28 +21,36 @@ import {
 // Formulários simples com poucos campos geralmente usam controlled, já dashboards com grande quantidade de inputs precisam usar o modelo de uncontrolled
 
 export function Home() {
-  // const [task, setTask] = useState('')
-
-  // function resetForm() {
-  //   setTask('')
+  const { register, handleSubmit, watch } = useForm()
+  // O useForm() é como se tivesse criando um novo formulário
+  // A função register é o método que vai adicionar os campos de input ao formulário
+  // Ela recebe o nome do input e retorna os métodos utilizados para trabalhar com inputs no JS, que a biblioteca react-hook-form utiliza para conseguir monitorar os valores dos inputs
+  // function register(name: string) {
+  //   return {
+  //     onChange: () => void,
+  //     onBlur: () => void,
+  //     onFocus: () => void,
+  //   }
   // }
 
-  function handleSubmit(event) {
-    event.target.task.value
+  function handleCreateNewCycle(data: any) {
+    console.log(data)
   }
+
+  const task = watch('task') // saber o valor do campo de task em tempo real
+  const isSubmitDisabled = !task
 
   return (
     <HomeContainer>
-      <form onSubmit={handleSubmit} action="">
+      <form onSubmit={handleSubmit(handleCreateNewCycle)} action="">
         <FormContainer>
           <label htmlFor="task">Vou trabalhar em</label>
           <TaskInput
             id="task"
-            name="task"
             list="task-suggestions"
             placeholder="Dê um nome para o seu projeto"
-            // onChange={(e) => setTask(e.target.value)}
-            // value={task} // se o estado mudar por uma origem que não seja a digitação do usuário, também atualizar visualmente esse input para mostrar o novo valor
+            {...register('task')}
+            // Spread operator para transformar cada um dos métodos do retorno da função register em uma propriedade para esse input
           />
 
           <datalist id="task-suggestions">
@@ -61,6 +69,7 @@ export function Home() {
             step={5}
             min={5}
             max={60}
+            {...register('minutesAmount', { valueAsNumber: true })} // o segundo parâmetro é um objeto de configurações
           />
 
           <span>minutos.</span>
@@ -74,7 +83,7 @@ export function Home() {
           <span>0</span>
         </CountdownContainer>
 
-        <StartCountdownButton disabled={!task} type="submit">
+        <StartCountdownButton disabled={isSubmitDisabled} type="submit">
           <Play size={24} />
           Começar
         </StartCountdownButton>
