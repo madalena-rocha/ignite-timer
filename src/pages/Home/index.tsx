@@ -31,10 +31,22 @@ const newCycleFormValidationSchema = zod.object({
 })
 // Schema nada mais é do que definir um formato e validar os dados do formulário com base nesse formato
 
+// interface NewCycleFormData {
+//   task: string
+//   minutesAmount: number
+// }
+
+type NewCycleFormData = zod.infer<typeof newCycleFormValidationSchema>
+// Extrai a tipagem do formulário a partir do schema de validação
+
 export function Home() {
-  const { register, handleSubmit, watch, formState } = useForm({
+  const { register, handleSubmit, watch } = useForm<NewCycleFormData>({
     resolver: zodResolver(newCycleFormValidationSchema),
     // Dentro do zodResolver, é necessário passar o schema de validação, ou seja, de que forma os dados dos inputs deverão ser validados
+    defaultValues: {
+      task: '',
+      minutesAmount: 0,
+    },
   })
   // O useForm() é como se tivesse criando um novo formulário
   // A função register é o método que vai adicionar os campos de input ao formulário
@@ -47,11 +59,9 @@ export function Home() {
   //   }
   // }
 
-  function handleCreateNewCycle(data: any) {
+  function handleCreateNewCycle(data: NewCycleFormData) {
     console.log(data)
   }
-
-  console.log(formState.errors)
 
   const task = watch('task') // saber o valor do campo de task em tempo real
   const isSubmitDisabled = !task
