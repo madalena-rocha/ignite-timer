@@ -40,7 +40,7 @@ type NewCycleFormData = zod.infer<typeof newCycleFormValidationSchema>
 // Extrai a tipagem do formulário a partir do schema de validação
 
 export function Home() {
-  const { register, handleSubmit, watch } = useForm<NewCycleFormData>({
+  const { register, handleSubmit, watch, reset } = useForm<NewCycleFormData>({
     resolver: zodResolver(newCycleFormValidationSchema),
     // Dentro do zodResolver, é necessário passar o schema de validação, ou seja, de que forma os dados dos inputs deverão ser validados
     defaultValues: {
@@ -61,6 +61,7 @@ export function Home() {
 
   function handleCreateNewCycle(data: NewCycleFormData) {
     console.log(data)
+    reset() // retorna os campos do formulário para os valores definidos no defaultValues
   }
 
   const task = watch('task') // saber o valor do campo de task em tempo real
