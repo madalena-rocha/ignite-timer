@@ -1,8 +1,9 @@
 import { Play } from 'phosphor-react'
-import { useForm } from 'react-hook-form'
+import { set, useForm } from 'react-hook-form'
 // Os hooks são funções que acoplam uma funcionalidade em um componente existente
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as zod from 'zod' // o zod não tem um export default, por isso importa tudo como zod
+import { useState } from 'react'
 
 import {
   CountdownContainer,
@@ -39,7 +40,16 @@ const newCycleFormValidationSchema = zod.object({
 type NewCycleFormData = zod.infer<typeof newCycleFormValidationSchema>
 // Extrai a tipagem do formulário a partir do schema de validação
 
+interface Cycle {
+  id: string
+  task: string
+  minutesAmount: number
+}
+
 export function Home() {
+  const [cycles, setCycles] = useState<Cycle[]>([]) // o estado vai armazenar uma lista de ciclos
+  const [activeCycleId, setActiveCycleId] = useState<string | null>(null)
+
   const { register, handleSubmit, watch, reset } = useForm<NewCycleFormData>({
     resolver: zodResolver(newCycleFormValidationSchema),
     // Dentro do zodResolver, é necessário passar o schema de validação, ou seja, de que forma os dados dos inputs deverão ser validados
@@ -60,9 +70,25 @@ export function Home() {
   // }
 
   function handleCreateNewCycle(data: NewCycleFormData) {
-    console.log(data)
+    const id = String(new Date().getTime()) // pega a data atual convertida para milissegundos
+
+    const newCycle: Cycle = {
+      id,
+      task: data.task,
+      minutesAmount: data.minutesAmount,
+    }
+
+    setCycles((state) => [...state, newCycle]) // copia o estado atual da variável de ciclos e adiciona o novo ciclo
+    // Closures: toda vez que o estado que está sendo alterado depende da sua versão anterior, é recomendado setar o valor desse estado no formato de função
+    setActiveCycleId(id)
+
     reset() // retorna os campos do formulário para os valores definidos no defaultValues
   }
+
+  const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId)
+  // Com base no id do ciclo ativo, percorrer todos os ciclos e retornar o ciclo que tem o mesmo id do ciclo ativo
+
+  console.log(activeCycle)
 
   const task = watch('task') // saber o valor do campo de task em tempo real
   const isSubmitDisabled = !task
