@@ -75,15 +75,26 @@ export function Home() {
   // Se for se basear somente no 1s do intervalo do setInterval para reduzir o contador e aumentar o tanto de segundos que passaram, pode ser que o timer não fique correto, passando menos segundos do que realmente já passou
 
   useEffect(() => {
+    let interval: number
+
     // Se tiver um ciclo ativo, fazer a redução do countdown
     if (activeCycle) {
-      setInterval(() => {
+      interval = setInterval(() => {
         // setAmountSecondsPassed(state => state + 1)
         // Como o 1s não é preciso, comparar a data atual com a data salva no startDate e ver quantos segundos já se passaram
         setAmountSecondsPassed(
           differenceInSeconds(new Date(), activeCycle.startDate),
         )
       }, 1000)
+    }
+
+    // Havia um intervalo rodando com o ciclo criado anteriormente, ou seja, o useEffect executou uma vez assim que foi criado o primeiro ciclo
+    // Ao criar um novo ciclo, o useEffect executa novamente, pois a variável activeCycle mudou
+    // A função de retorno do useEffect serve para, quando executar o useEffect de novo, porque aconteceu alguma mudança nas dependências, resetar o que estava fazendo no useEffect anterior, para que não aconteça mais
+    // Como foi criado um intervalo dentro do useEffect, cada vez que ele executa, está sendo criado um novo intervalo, sem deletar os intervalos criados anteriormente
+    // A função de retorno será utilizada para deletar os intervalos que não são mais necessários
+    return () => {
+      clearInterval(interval)
     }
   }, [activeCycle])
   // Dentro do useEfecct está utilizando a variável activeCycle externa ao useEfecct
@@ -102,6 +113,7 @@ export function Home() {
     setCycles((state) => [...state, newCycle]) // copia o estado atual da variável de ciclos e adiciona o novo ciclo
     // Closures: toda vez que o estado que está sendo alterado depende da sua versão anterior, é recomendado setar o valor desse estado no formato de função
     setActiveCycleId(id)
+    setAmountSecondsPassed(0) // evitar que ao criar um novo ciclo, seja reaproveitado os segundos que se passaram no ciclo anterior
 
     reset() // retorna os campos do formulário para os valores definidos no defaultValues
   }
