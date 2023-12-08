@@ -1,4 +1,4 @@
-import { Play } from 'phosphor-react'
+import { HandPalm, Play } from 'phosphor-react'
 import { useForm } from 'react-hook-form'
 // Os hooks são funções que acoplam uma funcionalidade em um componente existente
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -13,6 +13,7 @@ import {
   MinutesAmountInput,
   Separator,
   StartCountdownButton,
+  StopCountdownButton,
   TaskInput,
 } from './styles'
 
@@ -41,6 +42,8 @@ interface Cycle {
   task: string
   minutesAmount: number
   startDate: Date // salvar a data que o timer ficou ativo para, com base nela, saber quanto tempo passou
+  interruptedDate?: Date
+  // Anotar dentro do ciclo se ele foi interrompido ou não, como uma forma de ter um histórico de quais ciclos foram interrompidos e quais não foram, para conseguir mostrar no status do histórico
 }
 
 export function Home() {
@@ -118,6 +121,27 @@ export function Home() {
     reset() // retorna os campos do formulário para os valores definidos no defaultValues
   }
 
+  function handleInterruptCycle() {
+    setCycles(
+      cycles.map((cycle) => {
+        if (cycle.id === activeCycleId) {
+          return {
+            ...cycle,
+            interruptedDate: new Date(),
+          }
+        } else {
+          return cycle
+        }
+        // Percorrer todos os ciclos e, para cada ciclo, se o ciclo for o ciclo ativo, retornar todos os dados do ciclo, adicionando uma nova informação da data em que o ciclo foi interrompido
+        // Se não, retornar o ciclo sem alterações
+        // Para seguir os princípios da imutabilidade, ao trabalhar com arrays, no caso arrays de objetos, para mudar uma informação de um desses objetos, obrigatoriamente precisa percorrer todos os itens do array procurando pelo objeto que quer alterar para então fazer a alteração
+        // O map vai percorrer cada um dos ciclos e retornar de dentro do map cada um dos ciclos, alterados ou não
+      }),
+    )
+
+    setActiveCycleId(null)
+  }
+
   const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0 // converer o número de minutos inserido pelo usuário em segundos
   const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0
 
@@ -137,6 +161,8 @@ export function Home() {
   const task = watch('task') // saber o valor do campo de task em tempo real
   const isSubmitDisabled = !task
 
+  console.log(cycles)
+
   return (
     <HomeContainer>
       <form onSubmit={handleSubmit(handleCreateNewCycle)} action="">
@@ -146,6 +172,7 @@ export function Home() {
             id="task"
             list="task-suggestions"
             placeholder="Dê um nome para o seu projeto"
+            disabled={!!activeCycle} // !! porque o valor precisa ser um booleano
             {...register('task')}
             // Spread operator para transformar cada um dos métodos do retorno da função register em uma propriedade para esse input
           />
@@ -166,6 +193,7 @@ export function Home() {
             step={5}
             min={5}
             max={60}
+            disabled={!!activeCycle}
             {...register('minutesAmount', { valueAsNumber: true })} // o segundo parâmetro é um objeto de configurações
           />
 
@@ -180,10 +208,17 @@ export function Home() {
           <span>{seconds[1]}</span>
         </CountdownContainer>
 
-        <StartCountdownButton disabled={isSubmitDisabled} type="submit">
-          <Play size={24} />
-          Começar
-        </StartCountdownButton>
+        {activeCycle ? (
+          <StopCountdownButton onClick={handleInterruptCycle} type="button">
+            <HandPalm size={24} />
+            Interromper
+          </StopCountdownButton>
+        ) : (
+          <StartCountdownButton disabled={isSubmitDisabled} type="submit">
+            <Play size={24} />
+            Começar
+          </StartCountdownButton>
+        )}
       </form>
     </HomeContainer>
   )
