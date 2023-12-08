@@ -127,6 +127,13 @@ export function Home() {
   const minutes = String(minutesAmount).padStart(2, '0') // se a variável de minutos não tiver 2 caracteres, incluir zeros no começo da string até completar 2 caracteres
   const seconds = String(secondsAmount).padStart(2, '0')
 
+  // Quando tiver um ciclo acontecendo, colocar o countdown também no título da aba
+  useEffect(() => {
+    if (activeCycle) {
+      document.title = `${minutes}:${seconds}`
+    }
+  }, [minutes, seconds, activeCycle])
+
   const task = watch('task') // saber o valor do campo de task em tempo real
   const isSubmitDisabled = !task
 
