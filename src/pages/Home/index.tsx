@@ -1,9 +1,10 @@
 import { Play } from 'phosphor-react'
-import { set, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 // Os hooks são funções que acoplam uma funcionalidade em um componente existente
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as zod from 'zod' // o zod não tem um export default, por isso importa tudo como zod
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { differenceInSeconds } from 'date-fns' // differenceInSeconds calcula a diferença entre duas datas em segundos
 
 import {
   CountdownContainer,
@@ -32,11 +33,6 @@ const newCycleFormValidationSchema = zod.object({
 })
 // Schema nada mais é do que definir um formato e validar os dados do formulário com base nesse formato
 
-// interface NewCycleFormData {
-//   task: string
-//   minutesAmount: number
-// }
-
 type NewCycleFormData = zod.infer<typeof newCycleFormValidationSchema>
 // Extrai a tipagem do formulário a partir do schema de validação
 
@@ -44,6 +40,7 @@ interface Cycle {
   id: string
   task: string
   minutesAmount: number
+  startDate: Date // salvar a data que o timer ficou ativo para, com base nela, saber quanto tempo passou
 }
 
 export function Home() {
@@ -70,6 +67,28 @@ export function Home() {
   //   }
   // }
 
+  const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId)
+  // Com base no id do ciclo ativo, percorrer todos os ciclos e retornar o ciclo que tem o mesmo id do ciclo ativo
+
+  // No setInterval e o setTimeout, ao definir o intervalo de 1s, este 1s geralmente não é preciso, e sim uma estimaiva,
+  // principalmente se tiver rodando o navegador numa aba em background, ou se o computador está com um processamento muito lento, essa estimativa de 1s pode não acontecer em exatamente 1s
+  // Se for se basear somente no 1s do intervalo do setInterval para reduzir o contador e aumentar o tanto de segundos que passaram, pode ser que o timer não fique correto, passando menos segundos do que realmente já passou
+
+  useEffect(() => {
+    // Se tiver um ciclo ativo, fazer a redução do countdown
+    if (activeCycle) {
+      setInterval(() => {
+        // setAmountSecondsPassed(state => state + 1)
+        // Como o 1s não é preciso, comparar a data atual com a data salva no startDate e ver quantos segundos já se passaram
+        setAmountSecondsPassed(
+          differenceInSeconds(new Date(), activeCycle.startDate),
+        )
+      }, 1000)
+    }
+  }, [activeCycle])
+  // Dentro do useEfecct está utilizando a variável activeCycle externa ao useEfecct
+  // Sempre que usa uma variável externa, obrigatoriamente precisa incluir essa variável como dependência do useEffect
+
   function handleCreateNewCycle(data: NewCycleFormData) {
     const id = String(new Date().getTime()) // pega a data atual convertida para milissegundos
 
@@ -77,6 +96,7 @@ export function Home() {
       id,
       task: data.task,
       minutesAmount: data.minutesAmount,
+      startDate: new Date(), // data que o ciclo iniciou
     }
 
     setCycles((state) => [...state, newCycle]) // copia o estado atual da variável de ciclos e adiciona o novo ciclo
@@ -85,9 +105,6 @@ export function Home() {
 
     reset() // retorna os campos do formulário para os valores definidos no defaultValues
   }
-
-  const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId)
-  // Com base no id do ciclo ativo, percorrer todos os ciclos e retornar o ciclo que tem o mesmo id do ciclo ativo
 
   const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0 // converer o número de minutos inserido pelo usuário em segundos
   const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0
