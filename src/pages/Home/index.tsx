@@ -7,15 +7,12 @@ import { useEffect, useState } from 'react'
 import { differenceInSeconds } from 'date-fns' // differenceInSeconds calcula a diferença entre duas datas em segundos
 
 import {
-  CountdownContainer,
-  FormContainer,
   HomeContainer,
-  MinutesAmountInput,
-  Separator,
   StartCountdownButton,
   StopCountdownButton,
-  TaskInput,
 } from './styles'
+import { NewCycleForm } from './components/NewCycleForm'
+import { Countdown } from './components/Countdown'
 
 // Existem dois modelos de trabalhar com formulários em React, controlled e uncontrolled components
 // Controlled é quando mantém em tempo real a informação inserida no input do usuário guardada dentro do estado no componente da aplicação
@@ -188,47 +185,8 @@ export function Home() {
   return (
     <HomeContainer>
       <form onSubmit={handleSubmit(handleCreateNewCycle)} action="">
-        <FormContainer>
-          <label htmlFor="task">Vou trabalhar em</label>
-          <TaskInput
-            id="task"
-            list="task-suggestions"
-            placeholder="Dê um nome para o seu projeto"
-            disabled={!!activeCycle} // !! porque o valor precisa ser um booleano
-            {...register('task')}
-            // Spread operator para transformar cada um dos métodos do retorno da função register em uma propriedade para esse input
-          />
-
-          <datalist id="task-suggestions">
-            {/* Lista de sugestões para um input */}
-            <option value="Projeto 1" />
-            <option value="Projeto 2" />
-            <option value="Projeto 3" />
-            <option value="Banana" />
-          </datalist>
-
-          <label htmlFor="minutesAmount">durante</label>
-          <MinutesAmountInput
-            type="number"
-            id="minutesAmount"
-            placeholder="00"
-            step={5}
-            min={1}
-            max={60}
-            disabled={!!activeCycle}
-            {...register('minutesAmount', { valueAsNumber: true })} // o segundo parâmetro é um objeto de configurações
-          />
-
-          <span>minutos.</span>
-        </FormContainer>
-
-        <CountdownContainer>
-          <span>{minutes[0]}</span>
-          <span>{minutes[1]}</span>
-          <Separator>:</Separator>
-          <span>{seconds[0]}</span>
-          <span>{seconds[1]}</span>
-        </CountdownContainer>
+        <NewCycleForm />
+        <Countdown />
 
         {activeCycle ? (
           <StopCountdownButton onClick={handleInterruptCycle} type="button">
