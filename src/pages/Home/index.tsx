@@ -29,7 +29,7 @@ const newCycleFormValidationSchema = zod.object({
   task: zod.string().min(1, 'Informe a tarefa.'), // string de no mínimo 1 caractere, que caso não seja informado, retornar a mensagem de validação
   minutesAmount: zod
     .number()
-    .min(5, 'O ciclo precisa ser de no mínimo 5 minutos.')
+    .min(1, 'O ciclo precisa ser de no mínimo 5 minutos.')
     .max(60, 'O ciclo precisa ser de no máximo 60 minutos.'),
 })
 // Schema nada mais é do que definir um formato e validar os dados do formulário com base nesse formato
@@ -44,6 +44,7 @@ interface Cycle {
   startDate: Date // salvar a data que o timer ficou ativo para, com base nela, saber quanto tempo passou
   interruptedDate?: Date
   // Anotar dentro do ciclo se ele foi interrompido ou não, como uma forma de ter um histórico de quais ciclos foram interrompidos e quais não foram, para conseguir mostrar no status do histórico
+  finishedDate?: Date
 }
 
 export function Home() {
@@ -77,17 +78,41 @@ export function Home() {
   // principalmente se tiver rodando o navegador numa aba em background, ou se o computador está com um processamento muito lento, essa estimativa de 1s pode não acontecer em exatamente 1s
   // Se for se basear somente no 1s do intervalo do setInterval para reduzir o contador e aumentar o tanto de segundos que passaram, pode ser que o timer não fique correto, passando menos segundos do que realmente já passou
 
+  const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0 // converer o número de minutos inserido pelo usuário em segundos
+
   useEffect(() => {
     let interval: number
 
     // Se tiver um ciclo ativo, fazer a redução do countdown
     if (activeCycle) {
       interval = setInterval(() => {
-        // setAmountSecondsPassed(state => state + 1)
-        // Como o 1s não é preciso, comparar a data atual com a data salva no startDate e ver quantos segundos já se passaram
-        setAmountSecondsPassed(
-          differenceInSeconds(new Date(), activeCycle.startDate),
+        const secondsDifference = differenceInSeconds(
+          new Date(),
+          activeCycle.startDate,
         )
+
+        // Se a diferença em segundos da data que o ciclo foi criado para a data atual for igual ou maior que o total de segundos que o ciclo deveria ter, o ciclo acabou
+        if (secondsDifference >= totalSeconds) {
+          setCycles((state) =>
+            state.map((cycle) => {
+              if (cycle.id === activeCycleId) {
+                return {
+                  ...cycle,
+                  finishedDate: new Date(),
+                }
+              } else {
+                return cycle
+              }
+            }),
+          )
+
+          setAmountSecondsPassed(totalSeconds)
+          clearInterval(interval)
+        } else {
+          // setAmountSecondsPassed(state => state + 1)
+          // Como o 1s não é preciso, comparar a data atual com a data salva no startDate e ver quantos segundos já se passaram
+          setAmountSecondsPassed(secondsDifference)
+        }
       }, 1000)
     }
 
@@ -99,7 +124,7 @@ export function Home() {
     return () => {
       clearInterval(interval)
     }
-  }, [activeCycle])
+  }, [activeCycle, totalSeconds, activeCycleId])
   // Dentro do useEfecct está utilizando a variável activeCycle externa ao useEfecct
   // Sempre que usa uma variável externa, obrigatoriamente precisa incluir essa variável como dependência do useEffect
 
@@ -122,8 +147,8 @@ export function Home() {
   }
 
   function handleInterruptCycle() {
-    setCycles(
-      cycles.map((cycle) => {
+    setCycles((state) =>
+      state.map((cycle) => {
         if (cycle.id === activeCycleId) {
           return {
             ...cycle,
@@ -142,7 +167,6 @@ export function Home() {
     setActiveCycleId(null)
   }
 
-  const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0 // converer o número de minutos inserido pelo usuário em segundos
   const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0
 
   const minutesAmount = Math.floor(currentSeconds / 60)
@@ -160,8 +184,6 @@ export function Home() {
 
   const task = watch('task') // saber o valor do campo de task em tempo real
   const isSubmitDisabled = !task
-
-  console.log(cycles)
 
   return (
     <HomeContainer>
@@ -191,7 +213,7 @@ export function Home() {
             id="minutesAmount"
             placeholder="00"
             step={5}
-            min={5}
+            min={1}
             max={60}
             disabled={!!activeCycle}
             {...register('minutesAmount', { valueAsNumber: true })} // o segundo parâmetro é um objeto de configurações
