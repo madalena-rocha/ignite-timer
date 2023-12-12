@@ -1,10 +1,5 @@
 import { HandPalm, Play } from 'phosphor-react'
-import { useForm } from 'react-hook-form'
-// Os hooks são funções que acoplam uma funcionalidade em um componente existente
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as zod from 'zod' // o zod não tem um export default, por isso importa tudo como zod
 import { useEffect, useState } from 'react'
-import { differenceInSeconds } from 'date-fns' // differenceInSeconds calcula a diferença entre duas datas em segundos
 
 import {
   HomeContainer,
@@ -13,26 +8,6 @@ import {
 } from './styles'
 import { NewCycleForm } from './components/NewCycleForm'
 import { Countdown } from './components/Countdown'
-
-// Existem dois modelos de trabalhar com formulários em React, controlled e uncontrolled components
-// Controlled é quando mantém em tempo real a informação inserida no input do usuário guardada dentro do estado no componente da aplicação
-// Benefícios: como tem o valor em tempo real, é possível facilmente ter acesso a esses valores no submit e refletir visualmente alterações na interface baseado no valor desses inputs
-// Desvantagens: no React, cada atualização de estado provoca uma nova renderização, recalculando todo o conteúdo do componente do estado que mudou, podendo se tornar um problema para a aplicação em questão de performance
-// Uncontrolled é quando busca a informação do valor do input somente quando precisa dela
-// Como não tem acesso ao valor digitado letra a letra, perde a fluidez de habilitar ou desabilitar coisas, mas ganha em performance
-// Formulários simples com poucos campos geralmente usam controlled, já dashboards com grande quantidade de inputs precisam usar o modelo de uncontrolled
-
-const newCycleFormValidationSchema = zod.object({
-  task: zod.string().min(1, 'Informe a tarefa.'), // string de no mínimo 1 caractere, que caso não seja informado, retornar a mensagem de validação
-  minutesAmount: zod
-    .number()
-    .min(1, 'O ciclo precisa ser de no mínimo 5 minutos.')
-    .max(60, 'O ciclo precisa ser de no máximo 60 minutos.'),
-})
-// Schema nada mais é do que definir um formato e validar os dados do formulário com base nesse formato
-
-type NewCycleFormData = zod.infer<typeof newCycleFormValidationSchema>
-// Extrai a tipagem do formulário a partir do schema de validação
 
 interface Cycle {
   id: string
@@ -47,83 +22,9 @@ interface Cycle {
 export function Home() {
   const [cycles, setCycles] = useState<Cycle[]>([]) // o estado vai armazenar uma lista de ciclos
   const [activeCycleId, setActiveCycleId] = useState<string | null>(null)
-  const [amountSecondsPassed, setAmountSecondsPassed] = useState(0)
-
-  const { register, handleSubmit, watch, reset } = useForm<NewCycleFormData>({
-    resolver: zodResolver(newCycleFormValidationSchema),
-    // Dentro do zodResolver, é necessário passar o schema de validação, ou seja, de que forma os dados dos inputs deverão ser validados
-    defaultValues: {
-      task: '',
-      minutesAmount: 0,
-    },
-  })
-  // O useForm() é como se tivesse criando um novo formulário
-  // A função register é o método que vai adicionar os campos de input ao formulário
-  // Ela recebe o nome do input e retorna os métodos utilizados para trabalhar com inputs no JS, que a biblioteca react-hook-form utiliza para conseguir monitorar os valores dos inputs
-  // function register(name: string) {
-  //   return {
-  //     onChange: () => void,
-  //     onBlur: () => void,
-  //     onFocus: () => void,
-  //   }
-  // }
 
   const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId)
   // Com base no id do ciclo ativo, percorrer todos os ciclos e retornar o ciclo que tem o mesmo id do ciclo ativo
-
-  // No setInterval e o setTimeout, ao definir o intervalo de 1s, este 1s geralmente não é preciso, e sim uma estimaiva,
-  // principalmente se tiver rodando o navegador numa aba em background, ou se o computador está com um processamento muito lento, essa estimativa de 1s pode não acontecer em exatamente 1s
-  // Se for se basear somente no 1s do intervalo do setInterval para reduzir o contador e aumentar o tanto de segundos que passaram, pode ser que o timer não fique correto, passando menos segundos do que realmente já passou
-
-  const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0 // converer o número de minutos inserido pelo usuário em segundos
-
-  useEffect(() => {
-    let interval: number
-
-    // Se tiver um ciclo ativo, fazer a redução do countdown
-    if (activeCycle) {
-      interval = setInterval(() => {
-        const secondsDifference = differenceInSeconds(
-          new Date(),
-          activeCycle.startDate,
-        )
-
-        // Se a diferença em segundos da data que o ciclo foi criado para a data atual for igual ou maior que o total de segundos que o ciclo deveria ter, o ciclo acabou
-        if (secondsDifference >= totalSeconds) {
-          setCycles((state) =>
-            state.map((cycle) => {
-              if (cycle.id === activeCycleId) {
-                return {
-                  ...cycle,
-                  finishedDate: new Date(),
-                }
-              } else {
-                return cycle
-              }
-            }),
-          )
-
-          setAmountSecondsPassed(totalSeconds)
-          clearInterval(interval)
-        } else {
-          // setAmountSecondsPassed(state => state + 1)
-          // Como o 1s não é preciso, comparar a data atual com a data salva no startDate e ver quantos segundos já se passaram
-          setAmountSecondsPassed(secondsDifference)
-        }
-      }, 1000)
-    }
-
-    // Havia um intervalo rodando com o ciclo criado anteriormente, ou seja, o useEffect executou uma vez assim que foi criado o primeiro ciclo
-    // Ao criar um novo ciclo, o useEffect executa novamente, pois a variável activeCycle mudou
-    // A função de retorno do useEffect serve para, quando executar o useEffect de novo, porque aconteceu alguma mudança nas dependências, resetar o que estava fazendo no useEffect anterior, para que não aconteça mais
-    // Como foi criado um intervalo dentro do useEffect, cada vez que ele executa, está sendo criado um novo intervalo, sem deletar os intervalos criados anteriormente
-    // A função de retorno será utilizada para deletar os intervalos que não são mais necessários
-    return () => {
-      clearInterval(interval)
-    }
-  }, [activeCycle, totalSeconds, activeCycleId])
-  // Dentro do useEfecct está utilizando a variável activeCycle externa ao useEfecct
-  // Sempre que usa uma variável externa, obrigatoriamente precisa incluir essa variável como dependência do useEffect
 
   function handleCreateNewCycle(data: NewCycleFormData) {
     const id = String(new Date().getTime()) // pega a data atual convertida para milissegundos
@@ -182,11 +83,23 @@ export function Home() {
   const task = watch('task') // saber o valor do campo de task em tempo real
   const isSubmitDisabled = !task
 
+  /**
+   * Prop Drilling -> Quando há MUITAS propriedades APENAS para comunicação entre componentes
+   * Context API -> Permite compartilhar informações entre VÁRIOS componentes ao mesmo tempo
+   * A Context API não precisa utilizar de propriedades, é como se fossem informações globais
+   * que todos os componentes podem ter acesso, modificar essas informações, e quando modificadas,
+   * independente de quem modificou, todos os componentes que dependem dessa informação são atualizados
+   */
+
   return (
     <HomeContainer>
       <form onSubmit={handleSubmit(handleCreateNewCycle)} action="">
         <NewCycleForm />
-        <Countdown />
+        <Countdown
+          activeCycle={activeCycle}
+          setCycles={setCycles}
+          activeCycleId={activeCycleId}
+        />
 
         {activeCycle ? (
           <StopCountdownButton onClick={handleInterruptCycle} type="button">
