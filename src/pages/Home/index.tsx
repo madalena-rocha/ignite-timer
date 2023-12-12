@@ -1,5 +1,5 @@
 import { HandPalm, Play } from 'phosphor-react'
-import { useEffect, useState } from 'react'
+import { createContext, useEffect, useState } from 'react'
 
 import {
   HomeContainer,
@@ -19,6 +19,14 @@ interface Cycle {
   finishedDate?: Date
 }
 
+interface CyclesContextType {
+  activeCycle: Cycle | undefined // quando não houver nenhum ciclo ativo, a variável fica como undefined
+  activeCycleId: string | null
+  markCurrentCycleAsFinished: () => void
+}
+
+export const CyclesContext = createContext({} as CyclesContextType)
+
 export function Home() {
   const [cycles, setCycles] = useState<Cycle[]>([]) // o estado vai armazenar uma lista de ciclos
   const [activeCycleId, setActiveCycleId] = useState<string | null>(null)
@@ -26,23 +34,38 @@ export function Home() {
   const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId)
   // Com base no id do ciclo ativo, percorrer todos os ciclos e retornar o ciclo que tem o mesmo id do ciclo ativo
 
-  function handleCreateNewCycle(data: NewCycleFormData) {
-    const id = String(new Date().getTime()) // pega a data atual convertida para milissegundos
-
-    const newCycle: Cycle = {
-      id,
-      task: data.task,
-      minutesAmount: data.minutesAmount,
-      startDate: new Date(), // data que o ciclo iniciou
-    }
-
-    setCycles((state) => [...state, newCycle]) // copia o estado atual da variável de ciclos e adiciona o novo ciclo
-    // Closures: toda vez que o estado que está sendo alterado depende da sua versão anterior, é recomendado setar o valor desse estado no formato de função
-    setActiveCycleId(id)
-    setAmountSecondsPassed(0) // evitar que ao criar um novo ciclo, seja reaproveitado os segundos que se passaram no ciclo anterior
-
-    reset() // retorna os campos do formulário para os valores definidos no defaultValues
+  function markCurrentCycleAsFinished() {
+    setCycles((state) =>
+      state.map((cycle) => {
+        if (cycle.id === activeCycleId) {
+          return {
+            ...cycle,
+            finishedDate: new Date(),
+          }
+        } else {
+          return cycle
+        }
+      }),
+    )
   }
+
+  // function handleCreateNewCycle(data: NewCycleFormData) {
+  //   const id = String(new Date().getTime()) // pega a data atual convertida para milissegundos
+
+  //   const newCycle: Cycle = {
+  //     id,
+  //     task: data.task,
+  //     minutesAmount: data.minutesAmount,
+  //     startDate: new Date(), // data que o ciclo iniciou
+  //   }
+
+  //   setCycles((state) => [...state, newCycle]) // copia o estado atual da variável de ciclos e adiciona o novo ciclo
+  //   // Closures: toda vez que o estado que está sendo alterado depende da sua versão anterior, é recomendado setar o valor desse estado no formato de função
+  //   setActiveCycleId(id)
+  //   setAmountSecondsPassed(0) // evitar que ao criar um novo ciclo, seja reaproveitado os segundos que se passaram no ciclo anterior
+
+  //   reset() // retorna os campos do formulário para os valores definidos no defaultValues
+  // }
 
   function handleInterruptCycle() {
     setCycles((state) =>
@@ -65,23 +88,8 @@ export function Home() {
     setActiveCycleId(null)
   }
 
-  const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0
-
-  const minutesAmount = Math.floor(currentSeconds / 60)
-  const secondsAmount = currentSeconds % 60
-
-  const minutes = String(minutesAmount).padStart(2, '0') // se a variável de minutos não tiver 2 caracteres, incluir zeros no começo da string até completar 2 caracteres
-  const seconds = String(secondsAmount).padStart(2, '0')
-
-  // Quando tiver um ciclo acontecendo, colocar o countdown também no título da aba
-  useEffect(() => {
-    if (activeCycle) {
-      document.title = `${minutes}:${seconds}`
-    }
-  }, [minutes, seconds, activeCycle])
-
-  const task = watch('task') // saber o valor do campo de task em tempo real
-  const isSubmitDisabled = !task
+  // const task = watch('task') // saber o valor do campo de task em tempo real
+  // const isSubmitDisabled = !task
 
   /**
    * Prop Drilling -> Quando há MUITAS propriedades APENAS para comunicação entre componentes
@@ -93,13 +101,17 @@ export function Home() {
 
   return (
     <HomeContainer>
-      <form onSubmit={handleSubmit(handleCreateNewCycle)} action="">
-        <NewCycleForm />
-        <Countdown
-          activeCycle={activeCycle}
-          setCycles={setCycles}
-          activeCycleId={activeCycleId}
-        />
+      <form /* onSubmit={handleSubmit(handleCreateNewCycle)} */ action="">
+        <CyclesContext.Provider
+          value={{ activeCycle, activeCycleId, markCurrentCycleAsFinished }}
+        >
+          {/*
+            Para enviar a função setCycles inteira para dentro do conexto, é necessário adicionar sua tipagem do TS, que é complexa
+            Ao invés de enviar a função setCycles inteira, criar a função markCurrentCycleAsFinished e enviá-la pelo contexto
+          */}
+          {/* <NewCycleForm /> */}
+          <Countdown />
+        </CyclesContext.Provider>
 
         {activeCycle ? (
           <StopCountdownButton onClick={handleInterruptCycle} type="button">
@@ -107,7 +119,7 @@ export function Home() {
             Interromper
           </StopCountdownButton>
         ) : (
-          <StartCountdownButton disabled={isSubmitDisabled} type="submit">
+          <StartCountdownButton /* disabled={isSubmitDisabled} */ type="submit">
             <Play size={24} />
             Começar
           </StartCountdownButton>
