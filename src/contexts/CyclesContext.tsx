@@ -81,8 +81,6 @@ export function CyclesContextProvider({
     // Closures: toda vez que o estado que está sendo alterado depende da sua versão anterior, é recomendado setar o valor desse estado no formato de função
     setActiveCycleId(id)
     setAmountSecondsPassed(0) // evitar que ao criar um novo ciclo, seja reaproveitado os segundos que se passaram no ciclo anterior
-
-    // reset() // retorna os campos do formulário para os valores definidos no defaultValues
   }
 
   function interruptCurrentCycle() {

@@ -49,7 +49,13 @@ export function Home() {
   //   }
   // }
 
-  const { handleSubmit, watch /* reset */ } = newCycleForm
+  const { handleSubmit, watch, reset } = newCycleForm
+
+  function handleCreateNewCycle(data: NewCycleFormData) {
+    // handle porque essa função será chamada diretamente de um evento
+    createNewCycle(data)
+    reset() // retorna os campos do formulário para os valores definidos no defaultValues
+  }
 
   const task = watch('task') // saber o valor do campo de task em tempo real
   const isSubmitDisabled = !task
@@ -64,7 +70,7 @@ export function Home() {
 
   return (
     <HomeContainer>
-      <form onSubmit={handleSubmit(createNewCycle)} action="">
+      <form onSubmit={handleSubmit(handleCreateNewCycle)} action="">
         <FormProvider {...newCycleForm}>
           {/* O spread operator repassa cada uma das propriedades dentro do newCycleForm como uma propriedade para o elemento FormProvider */}
           <NewCycleForm />
