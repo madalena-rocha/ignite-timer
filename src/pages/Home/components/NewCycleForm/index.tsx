@@ -1,7 +1,7 @@
 import { FormContainer, MinutesAmountInput, TaskInput } from './styles'
 import { useContext } from 'react'
-import { CyclesContext } from '../..'
 import { useFormContext } from 'react-hook-form'
+import { CyclesContext } from '../../../../contexts/CyclesContext'
 
 // Existem dois modelos de trabalhar com formulários em React, controlled e uncontrolled components
 // Controlled é quando mantém em tempo real a informação inserida no input do usuário guardada dentro do estado no componente da aplicação
